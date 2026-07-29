@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GH-GEARS — Admin Control Center</title>
+<style>
+  :root {
+    --black: #000000;
+    --panel: #0a0a0a;
+    --panel-2: #141414;
+    --steel: #262626;
+    --steel-line: rgba(255,255,255,0.15);
+    --chrome: #ffffff;
+    --dim: #a3a3a3;
+    --display: 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+    --body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    --mono: 'Courier New', ui-monospace, Consolas, monospace;
+    --success: #ffffff;
+    --warning: #a3a3a3;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--black); color: var(--chrome); font-family: var(--body); display: flex; height: 100vh; overflow: hidden; }
+  
+  /* Sidebar */
+  aside { width: 260px; background: var(--panel); border-right: 1px solid var(--steel-line); display: flex; flex-direction: column; }
+  .logo { padding: 24px; font-family: var(--display); font-size: 22px; letter-spacing: .02em; color: var(--chrome); border-bottom: 1px solid var(--steel-line); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .logo span.accent { color: var(--black); background: var(--chrome); padding: 0 4px; }
+  
+  .nav-menu { padding: 16px 0; display: flex; flex-direction: column; gap: 4px; }
+  .nav-link { padding: 14px 24px; cursor: pointer; color: var(--dim); font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; font-weight: 500; transition: 0.2s; border-left: 2px solid transparent; }
+  .nav-link:hover, .nav-link.active { background: var(--panel-2); color: var(--chrome); border-left-color: var(--chrome); }
+
+  /* Main Content */
+  main { flex: 1; overflow-y: auto; padding: 40px; background: var(--black); }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px; border-bottom: 1px solid var(--steel-line); padding-bottom: 20px; }
+  h1 { font-family: var(--display); text-transform: uppercase; font-size: 28px; letter-spacing: -.01em; color: var(--chrome); }
+  
+  /* View Panels */
+  .view-panel { display: none; animation: fadeIn 0.3s ease; }
+  .view-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Stats Grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 36px; }
+  .stat-card { background: var(--panel); padding: 24px; border-radius: 4px; border: 1px solid var(--steel-line); }
+  .stat-card h3 { color: var(--dim); font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+  .stat-card .value { font-family: var(--display); font-size: 32px; color: var(--chrome); }
+
+  /* Forms & Inputs */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: var(--panel); padding: 28px; border-radius: 4px; border: 1px solid var(--steel-line); margin-bottom: 28px; }
+  .field-full { grid-column: 1 / -1; }
+  label { display: block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); margin-bottom: 8px; font-weight: 600; }
+  input, textarea, select { width: 100%; padding: 12px 14px; background: var(--panel-2); border: 1px solid var(--steel-line); color: var(--chrome); border-radius: 3px; font-family: var(--body); font-size: 14px; outline: none; transition: border-color .2s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--chrome); }
+  
+  button.primary { background: var(--chrome); color: var(--black); border: none; padding: 14px 24px; font-family: var(--display); text-transform: uppercase; letter-spacing: .03em; font-size: 14px; border-radius: 2px; cursor: pointer; transition: background .2s; }
+  button.primary:hover { background: var(--dim); }
+  button.danger { background: transparent; color: var(--chrome); border: 1px solid var(--steel); padding: 6px 12px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; border-radius: 2px; cursor: pointer; transition: .2s; }
+  button.danger:hover { background: var(--chrome); border-color: var(--chrome); color: var(--black); }
+
+  /* Data Tables */
+  .table-container { background: var(--panel); border: 1px solid var(--steel-line); border-radius: 4px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; text-align: left; }
+  th { background: var(--panel-2); padding: 16px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); font-weight: 700; border-bottom: 1px solid var(--steel-line); }
+  td { padding: 16px; border-bottom: 1px solid var(--steel-line); font-size: 13.5px; color: var(--chrome); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: rgba(255,255,255,0.02); }
+
+  .status-badge { padding: 4px 10px; border-radius: 2px; font-family: var(--mono); font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: .05em; border: 1px solid var(--steel); }
+  .status-pending { background: rgba(255,255,255,0.05); color: var(--dim); border-color: var(--steel-line); }
+  .status-shipped { background: var(--chrome); color: var(--black); border-color: var(--chrome); }
+  
+  .img-preview { width: 40px; height: 40px; border-radius: 2px; object-fit: cover; background: var(--panel-2); border: 1px solid var(--steel-line); filter: grayscale(100%); }
+
+  /* Modal Overlay */
+  .modal-backdrop { 
+    display: none; position: fixed; inset: 0; 
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); 
+    z-index: 100; align-items: center; justify-content: center; 
+    opacity: 0; transition: opacity 0.2s ease; 
+  }
+  .modal-backdrop.active { display: flex; opacity: 1; }
+  
+  .modal-window { 
+    background: var(--panel); border: 1px solid var(--steel-line); 
+    border-radius: 4px; width: 90%; max-width: 500px; padding: 32px; 
+    transform: translateY(20px); transition: transform 0.2s ease; 
+    max-height: 90vh; overflow-y: auto; 
+  }
+  .modal-backdrop.active .modal-window { transform: translateY(0); }
+  
+  .modal-header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    margin-bottom: 24px; border-bottom: 1px solid var(--steel-line); padding-bottom: 16px; 
+  }
+  .modal-title { font-family: var(--display); font-size: 20px; text-transform: uppercase; }
+  .close-btn { 
+    background: none; border: none; color: var(--dim); 
+    font-size: 24px; cursor: pointer; transition: color 0.2s; 
+  }
+  .close-btn:hover { color: var(--chrome); }
+  
+  .detail-group { margin-bottom: 16px; }
+  .detail-label { 
+    font-family: var(--mono); font-size: 11px; color: var(--dim); 
+    text-transform: uppercase; margin-bottom: 6px; font-weight: bold;
+  }
+  .detail-value { font-size: 14px; line-height: 1.5; color: var(--chrome); }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">GH<span class="accent">-GEARS</span></div>
+  <div class="nav-menu">
+    <div class="nav-link active" onclick="switchView('dashboard', this)">Dashboard</div>
+    <div class="nav-link" onclick="switchView('orders', this)">Live Orders</div>
+    <div class="nav-link" onclick="switchView('products', this)">Products</div>
+    <div class="nav-link" onclick="switchView('bundles', this)">Bundles</div>
+  </div>
+</aside>
+
+<main>
+  <div class="header">
+    <h1 id="pageTitle">Overview</h1>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="dashboard" class="view-panel active">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Revenue</h3>
+        <div class="value" id="statRevenue">LE 0.00</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total Orders</h3>
+        <div class="value" id="statOrders">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>Active Products</h3>
+        <div class="value" id="statProducts">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS VIEW -->
+  <div id="orders" class="view-panel">
+    <div class="form-grid" style="display:flex; gap: 10px; align-items: flex-end; padding:20px; margin-bottom:20px;">
+      <div style="flex:1">
+        <label>Search Order ID or Phone Number</label>
+        <input type="text" id="orderSearch" placeholder="Type to filter..." onkeyup="filterOrders()">
+      </div>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRODUCTS VIEW -->
+  <div id="products" class="view-panel">
+    <form class="form-grid" id="productForm">
+      <div><label>Product Name</label><input type="text" id="p-name" required></div>
+      <div><label>Price (LE)</label><input type="number" id="p-price" required></div>
+      <div><label>Old Price (LE)</label><input type="number" id="p-oldPrice"></div>
+      <div><label>Badge Tag</label><input type="text" id="p-badge" placeholder="e.g. Save 29%"></div>
+      <div class="field-full"><label>Image Filename or URL</label><input type="text" id="p-image" placeholder="e.g. image2.jpeg" required></div>
+      <div class="field-full"><button type="submit" class="primary">Add Product</button></div>
+    </form>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Img</th>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>Badge</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="productsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BUNDLES VIEW -->
+  <div id="bundles" class="view-panel">
+    <form class="form-grid" id="bundleForm">
+      <div><label>Bundle Name</label><input type="text" id="b-name" required></div>
+      <div><label>Bundle Price (LE)</label><input type="number" id="b-price" required></div>
+      <div><label>Old Price (LE)</label><input type="number" id="b-oldPrice"></div>
+      <div><label>Badge Tag</label><input type="text" id="b-badge" placeholder="e.g. Save 20%"></div>
+      <div class="field-full"><label>Included Items</label><input type="text" id="b-items" placeholder="e.g. Wraps + Straps" required></div>
+      <div class="field-full"><label>Image Filename or URL</label><input type="text" id="b-image" placeholder="e.g. image.jpeg" required></div>
+      <div class="field-full"><button type="submit" class="primary">Create Bundle</button></div>
+    </form>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Img</th>
+            <th>Bundle Name</th>
+            <th>Contents</th>
+            <th>Price</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="bundlesTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ORDER MODAL -->
+  <div id="orderModal" class="modal-backdrop" onclick="closeModal(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title" id="modalOrderId">Order Details</div>
+        <button class="close-btn" onclick="closeModal(true)">&times;</button>
+      </div>
+      <div class="detail-group">
+        <div class="detail-label">Customer Info</div>
+        <div class="detail-value" id="modalCustomer">-</div>
+      </div>
+      <div class="detail-group">
+        <div class="detail-label">Shipping Address</div>
+        <div class="detail-value" id="modalAddress">-</div>
+      </div>
+      <div class="detail-group">
+        <div class="detail-label">Order Items</div>
+        <div class="detail-value" id="modalItems">-</div>
+      </div>
+      <div class="detail-group">
+        <div class="detail-label">Total & Status</div>
+        <div class="detail-value" id="modalTotalStatus">-</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  function switchView(viewId, element) {
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    element.classList.add('active');
+    
+    const titles = { dashboard: 'Overview', orders: 'Order Management', products: 'Inventory', bundles: 'Bundle Offers' };
+    document.getElementById('pageTitle').innerText = titles[viewId];
+  }
+
+  function filterOrders() {
+    const term = document.getElementById('orderSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#ordersTableBody tr');
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(term) ? '' : 'none';
+    });
+  }
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyADD-Dbgnnvipx43Usg85tSBICQetivLUA",
+    authDomain: "ghgears.firebaseapp.com",
+    projectId: "ghgears",
+    storageBucket: "ghgears.appspot.com",
+    messagingSenderId: "259258099",
+    appId: "1:259258099:web:96a0a4d07cc248ac4ae986",
+    measurementId: "G-7E48J7H0CV"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Global object to store orders for the modal
+  window.ordersData = {};
+
+  // Real-time Listeners
+  onSnapshot(collection(db, "products"), (snapshot) => {
+    const tbody = document.getElementById('productsTableBody');
+    document.getElementById('statProducts').innerText = snapshot.size;
+    
+    tbody.innerHTML = snapshot.docs.map(docSnap => {
+      const p = docSnap.data();
+      const id = docSnap.id;
+      return `
+        <tr>
+          <td><img src="${p.imageUrl}" class="img-preview"></td>
+          <td><strong>${p.name}</strong></td>
+          <td>LE ${p.price}</td>
+          <td>${p.badge || '-'}</td>
+          <td><button class="danger" onclick="deleteItem('products', '${id}')">Delete</button></td>
+        </tr>
+      `;
+    }).join('');
+  });
+
+  onSnapshot(collection(db, "bundles"), (snapshot) => {
+    const tbody = document.getElementById('bundlesTableBody');
+    
+    tbody.innerHTML = snapshot.docs.map(docSnap => {
+      const b = docSnap.data();
+      const id = docSnap.id;
+      return `
+        <tr>
+          <td><img src="${b.imageUrl}" class="img-preview"></td>
+          <td><strong>${b.name}</strong></td>
+          <td><span style="font-size:11px; color:var(--dim)">${b.items}</span></td>
+          <td>LE ${b.price}</td>
+          <td><button class="danger" onclick="deleteItem('bundles', '${id}')">Delete</button></td>
+        </tr>
+      `;
+    }).join('');
+  });
+
+  onSnapshot(collection(db, "orders"), (snapshot) => {
+    const tbody = document.getElementById('ordersTableBody');
+    let totalRevenue = 0;
+    
+    document.getElementById('statOrders').innerText = snapshot.size;
+    
+    // Clear global orders data before re-populating
+    window.ordersData = {};
+
+    tbody.innerHTML = snapshot.docs.map(docSnap => {
+      const o = docSnap.data();
+      const id = docSnap.id;
+      
+      window.ordersData[id] = o; // Store order
+      
+      totalRevenue += Number(o.total) || 0;
+      const statusClass = o.status === 'Shipped' ? 'status-shipped' : 'status-pending';
+      const customerName = o.customer ? o.customer.name : (o.name || 'N/A');
+      const customerPhone = o.customer ? o.customer.phone : (o.phone || 'N/A');
+      const itemsList = Array.isArray(o.items) ? `${o.items.length} item(s)` : 'View Details';
+      
+      return `
+        <tr style="cursor:pointer;" onclick="openOrderModal('${id}')">
+          <td><strong>${o.orderId || id.substring(0,6)}</strong></td>
+          <td>${customerName}<br><span style="font-size:12px;color:var(--dim)">${customerPhone}</span></td>
+          <td style="font-size:12px; color:var(--dim)">${itemsList}</td>
+          <td><strong>LE ${o.total}</strong></td>
+          <td><span class="status-badge ${statusClass}">${o.status || 'Pending'}</span></td>
+          <td onclick="event.stopPropagation()">
+            <select onchange="updateOrderStatus('${id}', this.value)" style="width:auto; padding:6px 10px; font-size:11px; background:var(--panel-2); color:var(--chrome); border:1px solid var(--steel-line);">
+              <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+              <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+    document.getElementById('statRevenue').innerText = `LE ${totalRevenue.toFixed(2)}`;
+  });
+
+  // Add Product Form
+  document.getElementById('productForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await addDoc(collection(db, "products"), {
+      name: document.getElementById('p-name').value,
+      price: Number(document.getElementById('p-price').value),
+      oldPrice: Number(document.getElementById('p-oldPrice').value) || 0,
+      badge: document.getElementById('p-badge').value,
+      imageUrl: document.getElementById('p-image').value
+    });
+    e.target.reset();
+  });
+
+  // Add Bundle Form
+  document.getElementById('bundleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await addDoc(collection(db, "bundles"), {
+      name: document.getElementById('b-name').value,
+      price: Number(document.getElementById('b-price').value),
+      oldPrice: Number(document.getElementById('b-oldPrice').value) || 0,
+      badge: document.getElementById('b-badge').value,
+      items: document.getElementById('b-items').value,
+      imageUrl: document.getElementById('b-image').value
+    });
+    e.target.reset();
+  });
+
+  // Global Actions
+  window.deleteItem = async (colName, id) => {
+    if(confirm('Are you sure you want to delete this item?')) {
+      await deleteDoc(doc(db, colName, id));
+    }
+  };
+
+  window.updateOrderStatus = async (orderId, newStatus) => {
+    await updateDoc(doc(db, "orders", orderId), {
+      status: newStatus
+    });
+  };
+
+  // Modal Functions
+  window.openOrderModal = (id) => {
+    const o = window.ordersData[id];
+    if (!o) return;
+    
+    document.getElementById('modalOrderId').innerText = `Order #${o.orderId || id.substring(0,6)}`;
+    
+    const name = o.customer?.name || o.name || 'N/A';
+    const phone = o.customer?.phone || o.phone || 'N/A';
+    document.getElementById('modalCustomer').innerHTML = `<strong>${name}</strong><br>${phone}`;
+    
+    const address = o.customer?.address || o.address || 'No shipping address provided.';
+    document.getElementById('modalAddress').innerText = address;
+    
+    const detailedItems = Array.isArray(o.items) 
+      ? o.items.map(i => `&bull; ${i.name} (x${i.qty})`).join('<br>') 
+      : (o.items || 'N/A');
+    document.getElementById('modalItems').innerHTML = detailedItems;
+    
+    document.getElementById('modalTotalStatus').innerHTML = `<strong>LE ${o.total}</strong> &mdash; ${o.status || 'Pending'}`;
+    
+    document.getElementById('orderModal').classList.add('active');
+  };
+
+  window.closeModal = (e) => {
+    if (e === true || e.target.id === 'orderModal') {
+      document.getElementById('orderModal').classList.remove('active');
+    }
+  };
+</script>
+
+</body>
+</html>
