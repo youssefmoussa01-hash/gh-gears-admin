@@ -24,7 +24,7 @@
   body { background: var(--black); color: var(--chrome); font-family: var(--body); display: flex; height: 100vh; overflow: hidden; }
   
   /* Sidebar */
-  aside { width: 260px; background: var(--panel); border-right: 1px solid var(--steel-line); display: flex; flex-direction: column; }
+  aside { width: 260px; background: var(--panel); border-right: 1px solid var(--steel-line); display: flex; flex-direction: column; flex-shrink: 0; }
   .logo { padding: 24px; font-family: var(--display); font-size: 22px; letter-spacing: .02em; color: var(--chrome); border-bottom: 1px solid var(--steel-line); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
   .logo span.accent { color: var(--black); background: var(--chrome); padding: 0 4px; }
   
@@ -55,15 +55,15 @@
   input, textarea, select { width: 100%; padding: 12px 14px; background: var(--panel-2); border: 1px solid var(--steel-line); color: var(--chrome); border-radius: 3px; font-family: var(--body); font-size: 14px; outline: none; transition: border-color .2s; }
   input:focus, select:focus, textarea:focus { border-color: var(--chrome); }
   
-  button.primary { background: var(--chrome); color: var(--black); border: none; padding: 14px 24px; font-family: var(--display); text-transform: uppercase; letter-spacing: .03em; font-size: 14px; border-radius: 2px; cursor: pointer; transition: background .2s; }
+  button.primary { background: var(--chrome); color: var(--black); border: none; padding: 14px 24px; font-family: var(--display); text-transform: uppercase; letter-spacing: .03em; font-size: 14px; border-radius: 2px; cursor: pointer; transition: background .2s; width: 100%; }
   button.primary:hover { background: var(--dim); }
   button.danger { background: transparent; color: var(--chrome); border: 1px solid var(--steel); padding: 6px 12px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; border-radius: 2px; cursor: pointer; transition: .2s; }
   button.danger:hover { background: var(--chrome); border-color: var(--chrome); color: var(--black); }
 
   /* Data Tables */
-  .table-container { background: var(--panel); border: 1px solid var(--steel-line); border-radius: 4px; overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; text-align: left; }
-  th { background: var(--panel-2); padding: 16px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); font-weight: 700; border-bottom: 1px solid var(--steel-line); }
+  .table-container { background: var(--panel); border: 1px solid var(--steel-line); border-radius: 4px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; }
+  th { background: var(--panel-2); padding: 16px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); font-weight: 700; border-bottom: 1px solid var(--steel-line); white-space: nowrap; }
   td { padding: 16px; border-bottom: 1px solid var(--steel-line); font-size: 13.5px; color: var(--chrome); }
   tr:last-child td { border-bottom: none; }
   tr:hover { background: rgba(255,255,255,0.02); }
@@ -108,6 +108,65 @@
     text-transform: uppercase; margin-bottom: 6px; font-weight: bold;
   }
   .detail-value { font-size: 14px; line-height: 1.5; color: var(--chrome); }
+
+  /* --- Mobile Responsiveness Adjustments --- */
+  @media (max-width: 768px) {
+    body { 
+      flex-direction: column; 
+    }
+    aside { 
+      width: 100%; 
+      border-right: none; 
+      border-bottom: 1px solid var(--steel-line); 
+    }
+    .nav-menu { 
+      flex-direction: row; 
+      overflow-x: auto; 
+      padding: 0; 
+      /* Hide scrollbar for a cleaner look */
+      scrollbar-width: none; 
+      -ms-overflow-style: none;
+    }
+    .nav-menu::-webkit-scrollbar { 
+      display: none; 
+    }
+    .nav-link { 
+      border-left: none; 
+      border-bottom: 2px solid transparent; 
+      padding: 16px 20px; 
+      white-space: nowrap; 
+    }
+    .nav-link:hover, .nav-link.active { 
+      border-left-color: transparent; 
+      border-bottom-color: var(--chrome); 
+      background: transparent;
+    }
+    main { 
+      padding: 20px; 
+    }
+    .header {
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 22px;
+    }
+    .stats-grid { 
+      grid-template-columns: 1fr; 
+      gap: 16px;
+    }
+    .form-grid { 
+      grid-template-columns: 1fr; 
+      padding: 16px;
+    }
+    /* Fix the inline styles applied to the search box */
+    #orders .form-grid { 
+      flex-direction: column; 
+      align-items: stretch !important; 
+    }
+    .modal-window {
+      padding: 24px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -148,7 +207,7 @@
   <!-- ORDERS VIEW -->
   <div id="orders" class="view-panel">
     <div class="form-grid" style="display:flex; gap: 10px; align-items: flex-end; padding:20px; margin-bottom:20px;">
-      <div style="flex:1">
+      <div style="flex:1; width: 100%;">
         <label>Search Order ID or Phone Number</label>
         <input type="text" id="orderSearch" placeholder="Type to filter..." onkeyup="filterOrders()">
       </div>
